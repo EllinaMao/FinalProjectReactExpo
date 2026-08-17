@@ -1,56 +1,36 @@
-# Welcome to your Expo app 👋
+# Необхідно створити персональний аудіо-щоденник та медіа-каталог
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Суть додатка: запис власних голосових нотаток, робота з аудіо і пошук подкастів та текстів пісень через відкриті API
 
-## Get started
+    - подкасты: Podcast Index API: Free, open RSS-level metadata
+        - Hashed key + secret
+        - https://podcastindex-org.github.io/docs-api/#overview--example-code
+    - тексты: LRCLIB
+        -
+        - https://lrclib.net/docs
 
-1. Install dependencies
+Залежно від того, скільки вас у команді, робите відповідний обсяг задач — від звичайного диктофона до нормального медіаплеєра.
+Вимоги до реалізації:
 
-   ```bash
-   npm install
-   ```
+- Запис голосу з мікрофона та таймер скільки йде запис
 
-2. Start the app
+- Збереження записів у пам'ять девайса
 
-   ```bash
-   npx expo start
-   ```
+- Список усіх записів (назва, дата, тривалість)
 
-In the output, you'll find options to open the app in a
+- Пошук за назвою і фільтр за категоріями
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Перейменування і видалення записів
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Плеєр для нотаток (старт, пауза, перемотка слайдером)
 
-## Get a fresh project
+- Збереження метаданих і шляхів до файлів у локальне сховище
 
-When you're ready, run:
+### Стек библиотек (дляудобства просмотра)
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+expo-image-picker - Предоставляет доступ к системному интерфейсу камеры и галереи (фото и видео) устройства.
+expo-file-system - Позволяет взаимодействовать с локальной файловой системой мобильного устройства.
+@react-native-async-storage/async-storage - Обеспечивает постоянное локальное хранение данных в виде простых строковых пар "ключ-значение".
+expo-audio - Предоставляет API для воспроизведения и записи звука.
+expo-router - Управляет навигацией и переходами между экранами внутри приложения на основе структуры файлов.
+expo-linking - Позволяет приложению взаимодействовать с внешними ссылками и обрабатывать входящие глубокие ссылки (deep links).
