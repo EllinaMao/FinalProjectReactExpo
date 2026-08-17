@@ -6,13 +6,6 @@ const RootLayout = () => {
     <SafeAreaProvider>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="youtube-modal"
-          options={{
-            presentation: "modal",
-            headerShown: false,
-          }}
-        />
       </Stack>
     </SafeAreaProvider>
   );

@@ -1,6 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Drawer } from "expo-router/drawer";
-import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import TelegramDrawer from "../../components/drawer";
@@ -45,13 +44,12 @@ const TabLayout = () => {
             },
           }}
         >
-
           <Drawer.Screen
-            name="Index"
+            name="index"
             options={{
-              title: "Contacts",
+              title: "Index",
               drawerIcon: ({ color, size }) => (
-                <MaterialIcons name="contacts" size={size} color={color} />
+                <MaterialIcons name="home" size={size} color={color} />
               ),
             }}
           />
