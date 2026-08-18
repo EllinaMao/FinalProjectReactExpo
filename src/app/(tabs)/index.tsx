@@ -5,20 +5,20 @@ const HomeScreen = () => {
   // - Пошук за назвою і фільтр за категоріями
   // - Перейменування і видалення записів
   // кнопка перехода на вкладку с записью аудио
-  // вызов модалки с Плеєр для нотаток (старт, пауза, перемотка слайдером)
+  //раскрытие вкладки с Плеєр для нотаток (старт, пауза, перемотка слайдером)
   //
   const router = useRouter();
-  const openPlayer = () => {
+  const openRecorder = () => {
     // вызов модалки с Плеєр для нотаток (старт, пауза, перемотка слайдером)
     router.push({
-      pathname: "/player-modal",
+      pathname: "/recorder-modal",
     });
   };
 
   return (
     <View>
       <Text>This is homescreen temp icon</Text>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={openRecorder}>
         <Text>Open recorder</Text>
       </TouchableOpacity>
     </View>
