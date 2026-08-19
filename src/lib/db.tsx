@@ -54,7 +54,7 @@ class DatabaseManager {
       )
       .then((result) => {
         console.log("Record added with ID:", result.lastInsertRowId);
-        return result.lastInsertRowId;
+        return result;
       });
   }
 
