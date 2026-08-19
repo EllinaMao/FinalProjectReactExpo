@@ -1,6 +1,5 @@
 import { DrawerContentScrollView, DrawerItemList } from "expo-router/drawer";
-import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TelegramDrawer(props: any) {
@@ -10,11 +9,7 @@ export default function TelegramDrawer(props: any) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
-        <Image
-          style={styles.avatar}
-          source={require("../../assets/images/image.png")}
-        />
-        <Text style={styles.nameText}>Its me, Mario!</Text>
+        <Text style={styles.nameText}>Welcome!</Text>
       </View>
 
       <DrawerContentScrollView

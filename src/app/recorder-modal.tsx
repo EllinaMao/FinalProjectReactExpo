@@ -1,151 +1,192 @@
-import {
-    AudioModule,
-    RecordingOptions,
-    RecordingPresets,
-    useAudioRecorder,
-} from "expo-audio";
+import { AudioModule, RecordingPresets, useAudioRecorder } from "expo-audio";
+import { File, Paths } from "expo-file-system";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Modal,
+    Text as RNText,
     StyleSheet,
-    Text,
     TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
 
-interface RecorderModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (title: string, audioFilePath?: string) => void;
-  RecordingOptions?: RecordingOptions;
-}
+import {
+    Column,
+    Text as ComposeText,
+    Host,
+    RadioButton,
+    Row,
+    useMaterialColors,
+} from "@expo/ui/jetpack-compose";
 
-// interface DropdownProps {
-//   options: string[];
-//   selectedOption: string;
-//   onSelect: (option: string) => void;
-// }
-// const [selectedOption, setSelectedOption] = useState<RecordingOptions>(RecordingPresets.HIGH_QUALITY);
+import {
+    fillMaxWidth,
+    height,
+    padding,
+    selectable,
+    selectableGroup,
+} from "@expo/ui/jetpack-compose/modifiers";
 
-const RecorderModal = ({
-  isOpen,
-  onClose,
-  onSave,
-  RecordingOptions,
-}: RecorderModalProps) => {
+export default function RecorderModalScreen() {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [audioFilePath, setAudioFilePath] = useState<string | null>(null);
+  const colors = useMaterialColors();
+
+  const [selectedQuality, setSelectedQuality] = useState<"low" | "high">(
+    "high",
+  );
+
+  const qualityOptions = [
+    { label: "Низкое качество записи", id: "low" },
+    { label: "Высокое качество записи", id: "high" },
+  ] as const;
 
   const recorder = useAudioRecorder(
-    RecordingOptions || RecordingPresets.HIGH_QUALITY,
+    selectedQuality === "high"
+      ? RecordingPresets.HIGH_QUALITY
+      : RecordingPresets.LOW_QUALITY,
   );
 
   const handleStartRecording = async () => {
     try {
       const permission = await AudioModule.requestRecordingPermissionsAsync();
-
-      if (!permission.granted) {
-        console.error("Разрешение на доступ к микрофону не предоставлено");
-        return;
-      }
+      if (!permission.granted) return;
 
       recorder.record();
       setIsRecording(true);
       setAudioFilePath(null);
     } catch (error) {
-      console.error("Ошибка при старте записи:", error);
+      console.error(error);
       setIsRecording(false);
     }
   };
 
   const handleStopRecording = () => {
-    try {
-      recorder.stop();
-      setIsRecording(false);
-
-      if (recorder.uri) {
-        setAudioFilePath(recorder.uri);
-      }
-    } catch (error) {
-      console.error("Ошибка при остановке записи:", error);
-    }
+    recorder.stop();
+    setIsRecording(false);
+    if (recorder.uri) setAudioFilePath(recorder.uri);
   };
 
-  const handleSave = () => {
-    onSave(title, audioFilePath ?? undefined);
+  const handleSave = async () => {
+    try {
+      let finalAudioPath = null;
+      if (audioFilePath) {
+        const fileName = `audio_${Date.now()}.m4a`;
+        const sourceFile = new File(audioFilePath);
+        const destinationFile = new File(Paths.document, fileName);
+        await sourceFile.move(destinationFile);
+        finalAudioPath = destinationFile.uri;
+      }
 
-    setTitle("");
-    setAudioFilePath(null);
-    onClose();
+      console.log("Сохраняем:", title, finalAudioPath);
+      setTitle("");
+      setAudioFilePath(null);
+      router.back();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleClose = () => {
-    if (isRecording) {
-      recorder.stop();
-    }
-
+    if (isRecording) recorder.stop();
     setTitle("");
     setAudioFilePath(null);
     setIsRecording(false);
-    onClose();
+    router.back();
   };
 
   return (
-    <Modal visible={isOpen} animationType="slide" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.headerTitle}>Новая аудиозапись</Text>
+    <View style={styles.overlay}>
+      <View style={styles.modalContent}>
+        <RNText style={styles.headerTitle}>Новая аудиозапись</RNText>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Введите название..."
-            value={title}
-            onChangeText={setTitle}
-          />
+        <TextInput
+          style={styles.input}
+          placeholder="Введите название..."
+          value={title}
+          onChangeText={setTitle}
+        />
 
-          <View style={styles.recordControls}>
-            {isRecording ? (
-              <TouchableOpacity
-                style={styles.stopButton}
-                onPress={handleStopRecording}
-              >
-                <Text style={styles.buttonText}>Остановить запись</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.recordButton}
-                onPress={handleStartRecording}
-              >
-                <Text style={styles.buttonText}>
-                  {audioFilePath ? "Перезаписать" : "Начать запись"}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+        <View style={styles.qualityContainer}>
+          <RNText style={styles.qualityLabel}>Качество записи:</RNText>
 
-          {audioFilePath && !isRecording && (
-            <Text style={styles.statusText}>Запись готова к сохранению</Text>
-          )}
+          <Host matchContents>
+            <Column modifiers={[selectableGroup()]}>
+              {qualityOptions.map((opt) => (
+                <Row
+                  key={opt.id}
+                  verticalAlignment="center"
+                  modifiers={[
+                    fillMaxWidth(),
+                    height(48),
+                    selectable(
+                      opt.id === selectedQuality,
+                      () => {
+                        if (!isRecording) setSelectedQuality(opt.id);
+                      },
+                      "radioButton",
+                    ),
+                  ]}
+                >
+                  <RadioButton selected={opt.id === selectedQuality} />
 
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
-              <Text style={styles.buttonText}>Отмена</Text>
-            </TouchableOpacity>
+                  <ComposeText
+                    color={colors.onSurface}
+                    modifiers={[padding(16, 0, 0, 0)]}
+                  >
+                    {opt.label}
+                  </ComposeText>
+                </Row>
+              ))}
+            </Column>
+          </Host>
+        </View>
+
+        <View style={styles.recordControls}>
+          {isRecording ? (
             <TouchableOpacity
-              style={[styles.saveButton, !title && styles.saveButtonDisabled]}
-              onPress={handleSave}
-              disabled={!title}
+              style={styles.stopButton}
+              onPress={handleStopRecording}
             >
-              <Text style={styles.buttonText}>Сохранить</Text>
+              <RNText style={styles.buttonText}>Остановить запись</RNText>
             </TouchableOpacity>
-          </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.recordButton}
+              onPress={handleStartRecording}
+            >
+              <RNText style={styles.buttonText}>
+                {audioFilePath ? "Перезаписать" : "Начать запись"}
+              </RNText>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {audioFilePath && !isRecording && (
+          <RNText style={styles.statusText}>Запись готова к сохранению</RNText>
+        )}
+
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
+            <RNText style={styles.buttonText}>Отмена</RNText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              (!title || !audioFilePath) && styles.saveButtonDisabled,
+            ]}
+            onPress={handleSave}
+            disabled={!title || !audioFilePath}
+          >
+            <RNText style={styles.buttonText}>Сохранить</RNText>
+          </TouchableOpacity>
         </View>
       </View>
-    </Modal>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   overlay: {
@@ -173,6 +214,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 20,
+  },
+  qualityContainer: {
+    marginBottom: 20,
+  },
+  qualityLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 8,
   },
   recordControls: {
     alignItems: "center",
@@ -225,5 +274,3 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-
-export default RecorderModal;

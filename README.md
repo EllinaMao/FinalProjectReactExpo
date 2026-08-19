@@ -31,3 +31,5 @@ expo-router - Управляет навигацией и переходами м
 expo-linking - Позволяет приложению взаимодействовать с внешними ссылками и обрабатывать входящие глубокие ссылки (deep links).
 expo-crypto - индексация
 expo-sqlite - библиотека sql
+react-native-element-dropdown - dropdown
+expo/ui - <https://docs.expo.dev/versions/latest/sdk/ui/jetpack-compose/radiobutton/>
