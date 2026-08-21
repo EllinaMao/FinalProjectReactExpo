@@ -1,21 +1,21 @@
 import { AudioModule, RecordingPresets, useAudioRecorder } from "expo-audio";
 import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButtons } from "@/components/action-buttons";
-import { QualityOption, QualitySelector } from "@/components/quality-selector";
 import { RecordControls } from "@/components/record-controls";
-import { dbManager } from "@/lib/db";
+import { QualityOption, QualitySelector } from "../components/quality-selector";
+import { dbManager } from "../lib/db";
 
 export default function RecorderModalScreen() {
   const router = useRouter();
   
   const [title, setTitle] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [audioFilePath, setAudioFilePath] = useState<string | null>(null);
   const [selectedQuality, setSelectedQuality] = useState<QualityOption>("high");
+  const [recordDuration, setRecordDuration] = useState(0);
 
   const recorder = useAudioRecorder(
     selectedQuality === "high"
@@ -23,16 +23,36 @@ export default function RecorderModalScreen() {
       : RecordingPresets.LOW_QUALITY
   );
 
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordDuration((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setRecordDuration(0);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
   const handleStartRecording = async () => {
     try {
       const permission = await AudioModule.requestRecordingPermissionsAsync();
-      if (!permission.granted) return;
+      if (!permission.granted) {
+        console.error("Нет прав на микрофон!");
+        return;
+      }
 
       recorder.record();
       setIsRecording(true);
-      setAudioFilePath(null);
     } catch (error) {
-      console.error(error);
+      console.error("Ошибка старта:", error);
       setIsRecording(false);
     }
   };
@@ -40,36 +60,38 @@ export default function RecorderModalScreen() {
   const handleStopRecording = () => {
     recorder.stop();
     setIsRecording(false);
-    if (recorder.uri) setAudioFilePath(recorder.uri);
+    // Мы больше не пытаемся поймать URI здесь!
   };
 
   const handleSave = async () => {
     try {
-      let finalAudioPath = null;
-      if (audioFilePath) {
-        const fileName = `audio_${Date.now()}.m4a`;
-        const sourceFile = new File(audioFilePath);
-        const destinationFile = new File(Paths.document, fileName);
-        await sourceFile.move(destinationFile);
-        finalAudioPath = destinationFile.uri;
-      }
+      // ИСПОЛЬЗУЕМ ПУТЬ НАПРЯМУЮ ИЗ recorder
+      const currentUri = recorder.uri;
       
-      console.log("Сохраняем:", title, finalAudioPath);
-      await dbManager.addRecord(title, finalAudioPath);
+      if (!currentUri) {
+        console.error("Попытка сохранить, но файл еще не готов!");
+        return;
+      }
+
+      const fileName = `audio_${Date.now()}.m4a`;
+      const sourceFile = new File(currentUri);
+      const destinationFile = new File(Paths.document, fileName);
+      
+      await sourceFile.move(destinationFile);
+      
+      console.log("Сохраняем в БД путь:", destinationFile.uri);
+      await dbManager.addRecord(title, destinationFile.uri);
 
       setTitle("");
-      setAudioFilePath(null);
       router.back();
     } catch (error) {
-      console.error(error);
+      console.error("Ошибка при сохранении:", error);
     }
   };
 
   const handleClose = () => {
     if (isRecording) recorder.stop();
     setTitle("");
-    setAudioFilePath(null);
-    setIsRecording(false);
     router.back();
   };
 
@@ -91,21 +113,32 @@ export default function RecorderModalScreen() {
           disabled={isRecording}
         />
 
+        {isRecording && (
+          <View style={styles.timerContainer}>
+            <Text style={styles.timerText}>
+              Идет запись: {formatTime(recordDuration)}
+            </Text>
+          </View>
+        )}
+
         <RecordControls
           isRecording={isRecording}
-          hasAudio={!!audioFilePath}
+          // Смотрим на наличие recorder.uri напрямую
+          hasAudio={!!recorder.uri} 
           onStart={handleStartRecording}
           onStop={handleStopRecording}
         />
 
-        {audioFilePath && !isRecording && (
+        {/* Показываем статус, если запись остановлена и путь готов */}
+        {recorder.uri && !isRecording && (
           <Text style={styles.statusText}>Запись готова к сохранению</Text>
         )}
 
         <ActionButtons
           onCancel={handleClose}
           onSave={handleSave}
-          saveDisabled={!title || !audioFilePath} 
+          // Блокируем кнопку, если нет названия ИЛИ сам рекордер еще не отдал путь
+          saveDisabled={!title || !recorder.uri} 
         />
       </View>
     </View>
@@ -143,5 +176,14 @@ const styles = StyleSheet.create({
     color: "#10b981",
     textAlign: "center",
     marginBottom: 20,
+  },
+  timerContainer: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  timerText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#ef4444",
   },
 });

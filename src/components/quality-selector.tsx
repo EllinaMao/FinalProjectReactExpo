@@ -24,7 +24,7 @@ interface QualitySelectorProps {
 }
 
 const qualityOptions = [
-  { label: "Низкое качество (экономия места)", id: "low" as QualityOption },
+  { label: "Низкое качество", id: "low" as QualityOption },
   { label: "Высокое качество", id: "high" as QualityOption },
 ];
 
@@ -54,7 +54,7 @@ export const QualitySelector = ({ selectedQuality, onSelect, disabled }: Quality
               ]}
             >
               <RadioButton selected={opt.id === selectedQuality} />
-              <ComposeText color={colors.onBackground} modifiers={[padding(16, 0, 0, 0)]}>
+              <ComposeText color={colors.onPrimary} modifiers={[padding(16, 0, 0, 0)]}>
                 {opt.label}
               </ComposeText>
             </Row>

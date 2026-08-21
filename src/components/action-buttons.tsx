@@ -15,7 +15,6 @@ export const ActionButtons = ({ onCancel, onSave, saveDisabled }: ActionButtonsP
       <TouchableOpacity
         style={[styles.saveButton, saveDisabled && styles.saveButtonDisabled]}
         onPress={onSave}
-        disabled={saveDisabled}
       >
         <Text style={styles.buttonText}>Сохранить</Text>
       </TouchableOpacity>

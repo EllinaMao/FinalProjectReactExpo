@@ -16,8 +16,10 @@ const HomeScreen = () => {
   
   const [records, setRecords] = useState<Record[]>([]);
 
-  const loadRecords = async () => {
+const loadRecords = async () => {
     try {
+      await dbManager.init();
+      
       const data = await dbManager.getAllRecords(); 
       setRecords(data);
     } catch (error) {
