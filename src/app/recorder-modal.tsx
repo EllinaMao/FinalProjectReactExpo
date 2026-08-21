@@ -6,8 +6,10 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButtons } from "@/components/action-buttons";
 import { RecordControls } from "@/components/record-controls";
+import * as Crypto from "expo-crypto";
 import { QualityOption, QualitySelector } from "../components/quality-selector";
 import { dbManager } from "../lib/db";
+
 
 export default function RecorderModalScreen() {
   const router = useRouter();
@@ -69,14 +71,18 @@ export default function RecorderModalScreen() {
 
   const handleSave = async () => {
     try {
-      const currentUri = recorder.uri;
-      
+      let TitleNew = Crypto.randomUUID();
+      if(!title){
+        setTitle(`Audio ${TitleNew}`);
+      }
+
+      const currentUri = recorder.uri;    
       if (!currentUri) {
         console.error("Попытка сохранить, но файл еще не готов!");
         return;
       }
 
-      const fileName = `audio_${Date.now()}.m4a`;
+      const fileName = `audio_${TitleNew}.m4a`;
       const sourceFile = new File(currentUri);
       const destinationFile = new File(Paths.document, fileName);
       
