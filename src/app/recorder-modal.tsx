@@ -1,4 +1,4 @@
-import { AudioModule, RecordingPresets, useAudioRecorder } from "expo-audio";
+import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from "expo-audio";
 import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -46,8 +46,14 @@ export default function RecorderModalScreen() {
       const permission = await AudioModule.requestRecordingPermissionsAsync();
       if (!permission.granted) {
         console.error("Нет прав на микрофон!");
-        return;
       }
+
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        allowsRecording: true,
+      });
+
+      await recorder.prepareToRecordAsync();
 
       recorder.record();
       setIsRecording(true);
@@ -56,16 +62,13 @@ export default function RecorderModalScreen() {
       setIsRecording(false);
     }
   };
-
   const handleStopRecording = () => {
     recorder.stop();
     setIsRecording(false);
-    // Мы больше не пытаемся поймать URI здесь!
   };
 
   const handleSave = async () => {
     try {
-      // ИСПОЛЬЗУЕМ ПУТЬ НАПРЯМУЮ ИЗ recorder
       const currentUri = recorder.uri;
       
       if (!currentUri) {
