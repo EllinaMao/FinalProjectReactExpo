@@ -6,6 +6,7 @@ export interface Record {
   title: string;
   audioFilePath?: string;
   created_at?: number;
+  length?: number;
 }
 
 class DatabaseManager {
@@ -22,35 +23,41 @@ class DatabaseManager {
       console.log("БД в ожидании");
       return;
     }
-    
+
     this.initPromise = (async () => {
       this.db = await SQLite.openDatabaseAsync("records.db");
-      
+
       await this.db.execAsync(
         `CREATE TABLE IF NOT EXISTS records(
           id CHAR(32) PRIMARY KEY NOT NULL,
           title TEXT NOT NULL,
           audioFilePath TEXT,
+          length INTEGER,
           created_at INTEGER
-        );`
+        );`,
       );
       console.log("Таблица records создана или уже существует");
     })();
-    
+
     await this.initPromise;
   }
 
-  async addRecord(title: string, audioFilePath?: string | null): Promise<string> {
+  async addRecord(
+    title: string,
+    audioFilePath?: string | null,
+    length?: number | null,
+  ): Promise<string> {
     if (!this.db) throw new Error("Db is not initialized");
 
     const newId = Crypto.randomUUID();
 
     await this.db.runAsync(
-      "INSERT INTO records(id, title, audioFilePath, created_at) VALUES (?, ?, ?, ?);",
+      "INSERT INTO records(id, title, audioFilePath, length, created_at) VALUES (?, ?, ?, ?, ?);",
       newId,
       title,
       audioFilePath ?? null,
-      Date.now()
+      length ?? null,
+      Date.now(),
     );
 
     console.log("Record added with ID:", newId);
@@ -61,10 +68,10 @@ class DatabaseManager {
     if (!this.db) throw new Error("Db is not init");
 
     const query = `SELECT * FROM records ORDER BY created_at DESC;`;
-    
+
     const rows = await this.db.getAllAsync<Record>(query);
     console.log("Records retrieved: ", rows.length);
-    
+
     return rows;
   }
 
@@ -78,8 +85,26 @@ class DatabaseManager {
   async updateRecordTitle(id: string, title: string) {
     if (!this.db) throw new Error("Db is not init");
 
-    await this.db.runAsync("UPDATE records SET title = ? WHERE id = ?", title, id);
+    await this.db.runAsync(
+      "UPDATE records SET title = ? WHERE id = ?",
+      title,
+      id,
+    );
     console.log("Record updated with ID:", id);
+  }
+  async findRecordByName(title: string): Promise<Record | null> {
+    if (!this.db) throw new Error("Db is not init");
+
+    const query = `SELECT * FROM records WHERE title = ? LIMIT 1;`;
+    const rows = await this.db.getAllAsync<Record>(query, title);
+    return rows.length > 0 ? rows[0] : null;
+  }
+  async findRecordByLength(length: number): Promise<Record[]> {
+    if (!this.db) throw new Error("Db is not init");
+
+    const query = `SELECT * FROM records WHERE length = ?;`;
+    const rows = await this.db.getAllAsync<Record>(query, length);
+    return rows;
   }
 }
 

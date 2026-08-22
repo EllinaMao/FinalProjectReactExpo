@@ -1,4 +1,9 @@
-import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from "expo-audio";
+import {
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+  useAudioRecorder,
+} from "expo-audio";
 import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -10,19 +15,19 @@ import * as Crypto from "expo-crypto";
 import { QualityOption, QualitySelector } from "../components/quality-selector";
 import { dbManager } from "../lib/db";
 
-
 export default function RecorderModalScreen() {
   const router = useRouter();
-  
+
   const [title, setTitle] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [selectedQuality, setSelectedQuality] = useState<QualityOption>("high");
   const [recordDuration, setRecordDuration] = useState(0);
+  const [audioLength, setAudioLength] = useState<number | null>(null);
 
   const recorder = useAudioRecorder(
     selectedQuality === "high"
       ? RecordingPresets.HIGH_QUALITY
-      : RecordingPresets.LOW_QUALITY
+      : RecordingPresets.LOW_QUALITY,
   );
 
   useEffect(() => {
@@ -32,13 +37,16 @@ export default function RecorderModalScreen() {
         setRecordDuration((prev) => prev + 1);
       }, 1000);
     } else {
+      setAudioLength(recordDuration);
       setRecordDuration(0);
     }
     return () => clearInterval(interval);
   }, [isRecording]);
 
   const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const m = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
     const s = (seconds % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
@@ -72,11 +80,11 @@ export default function RecorderModalScreen() {
   const handleSave = async () => {
     try {
       let TitleNew = Crypto.randomUUID();
-      if(!title){
+      if (!title) {
         setTitle(`Audio ${TitleNew}`);
       }
 
-      const currentUri = recorder.uri;    
+      const currentUri = recorder.uri;
       if (!currentUri) {
         console.error("Попытка сохранить, но файл еще не готов!");
         return;
@@ -85,13 +93,14 @@ export default function RecorderModalScreen() {
       const fileName = `audio_${TitleNew}.m4a`;
       const sourceFile = new File(currentUri);
       const destinationFile = new File(Paths.document, fileName);
-      
+
       await sourceFile.move(destinationFile);
-      
+
       console.log("Сохраняем в БД путь:", destinationFile.uri);
-      await dbManager.addRecord(title, destinationFile.uri);
+      await dbManager.addRecord(title, destinationFile.uri, audioLength);
 
       setTitle("");
+      setAudioLength(null);
       router.back();
     } catch (error) {
       console.error("Ошибка при сохранении:", error);
@@ -132,13 +141,11 @@ export default function RecorderModalScreen() {
 
         <RecordControls
           isRecording={isRecording}
-          // Смотрим на наличие recorder.uri напрямую
-          hasAudio={!!recorder.uri} 
+          hasAudio={!!recorder.uri}
           onStart={handleStartRecording}
           onStop={handleStopRecording}
         />
 
-        {/* Показываем статус, если запись остановлена и путь готов */}
         {recorder.uri && !isRecording && (
           <Text style={styles.statusText}>Запись готова к сохранению</Text>
         )}
@@ -146,8 +153,7 @@ export default function RecorderModalScreen() {
         <ActionButtons
           onCancel={handleClose}
           onSave={handleSave}
-          // Блокируем кнопку, если нет названия ИЛИ сам рекордер еще не отдал путь
-          saveDisabled={!title || !recorder.uri} 
+          saveDisabled={!title || !recorder.uri}
         />
       </View>
     </View>
