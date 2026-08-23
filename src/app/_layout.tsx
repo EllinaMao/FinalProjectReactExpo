@@ -11,6 +11,10 @@ const RootLayout = () => {
           name="recorder-modal"
           options={{ presentation: "modal", headerShown: false }}
         />
+        <Stack.Screen
+          name="player"
+          options={{ presentation: "modal", headerShown: false }}
+        />
       </Stack>
     </SafeAreaProvider>
   );

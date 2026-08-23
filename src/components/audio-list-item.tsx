@@ -29,10 +29,9 @@ const AudioListItem = ({
     } else {
       if (item.audioFilePath) {
         router.push({
-          pathname: "../player",
+          pathname: "/player",
           params: {
-            title: item.title,
-            uri: item.audioFilePath,
+            id: item.id,
           },
         });
       }

@@ -25,6 +25,8 @@ class DatabaseManager {
     }
 
     this.initPromise = (async () => {
+      //WARNING - only for testing
+      await this.resetDatabase("records.db");
       this.db = await SQLite.openDatabaseAsync("records.db");
 
       await this.db.execAsync(
@@ -92,6 +94,16 @@ class DatabaseManager {
     );
     console.log("Record updated with ID:", id);
   }
+  async getRecordById(id: string): Promise<Record | null> {
+    if (!this.db) throw new Error("Db is not init");
+
+    const row = await this.db.getFirstAsync<Record>(
+      "SELECT * FROM records WHERE id = ?;",
+      id,
+    );
+
+    return row;
+  }
   async findRecordByName(title: string): Promise<Record | null> {
     if (!this.db) throw new Error("Db is not init");
 
@@ -105,6 +117,9 @@ class DatabaseManager {
     const query = `SELECT * FROM records WHERE length = ?;`;
     const rows = await this.db.getAllAsync<Record>(query, length);
     return rows;
+  }
+  async resetDatabase(dbName: string) {
+    await SQLite.deleteDatabaseAsync(dbName);
   }
 }
 
