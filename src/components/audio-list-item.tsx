@@ -1,7 +1,9 @@
 import { Record } from "@/lib/db";
+import Entypo from "@expo/vector-icons/Entypo";
 import { useAudioPlayer } from "expo-audio";
+import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
+import { formatDate } from "../helpers/formatDate";
 interface AudioListItemProps {
   item: Record;
   isSelectionMode: boolean;
@@ -16,6 +18,7 @@ const AudioListItem = ({
   onToggle,
 }: AudioListItemProps) => {
   const player = useAudioPlayer(item.audioFilePath ?? null);
+  const router = useRouter();
 
   const handleLongPress = () => {
     //change title to input field and allow user to edit it
@@ -24,24 +27,19 @@ const AudioListItem = ({
     if (isSelectionMode) {
       onToggle(item.id);
     } else {
-      if (!player) return;
-      if (player.playing) {
-        player.pause();
-      } else {
-        player.play();
+      if (item.audioFilePath) {
+        router.push({
+          pathname: "../player",
+          params: {
+            title: item.title,
+            uri: item.audioFilePath,
+          },
+        });
       }
     }
   };
 
-  const formattedDate = item.created_at
-    ? new Date(item.created_at).toLocaleDateString("ru-RU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "Дата неизвестна";
+  const formattedDate = formatDate(item.created_at);
 
   return (
     <TouchableOpacity style={styles.itemContainer} onPress={handlePress}>
@@ -52,23 +50,13 @@ const AudioListItem = ({
       )}
 
       <View style={styles.itemInfo}>
-        <TouchableOpacity onLongPress={handleLongPress}>
-          <Text style={styles.itemTitle}>{item.title}</Text>
-        </TouchableOpacity>
+        <Text style={styles.itemTitle}>{item.title}</Text>
         <Text style={styles.itemDate}>{formattedDate}</Text>
-        <Text style={styles.itemDate}>
-          {item.length ? `${item.length} сек.` : "Длительность неизвестна"}
-        </Text>
       </View>
-
       {!isSelectionMode &&
         (item.audioFilePath ? (
-          <View
-            style={[styles.playButton, player?.playing && styles.playingButton]}
-          >
-            <Text style={styles.playButtonText}>
-              {player?.playing ? "Пауза" : "Слушать"}
-            </Text>
+          <View style={styles.playButton}>
+            <Entypo name="controller-play" size={24} color="black" />
           </View>
         ) : (
           <View style={styles.noAudioBadge}>

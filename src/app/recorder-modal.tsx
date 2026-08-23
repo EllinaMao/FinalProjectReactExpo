@@ -13,6 +13,7 @@ import { ActionButtons } from "@/components/action-buttons";
 import { RecordControls } from "@/components/record-controls";
 import * as Crypto from "expo-crypto";
 import { QualityOption, QualitySelector } from "../components/quality-selector";
+import { formatTime } from "../helpers/formatTime";
 import { dbManager } from "../lib/db";
 
 export default function RecorderModalScreen() {
@@ -43,13 +44,13 @@ export default function RecorderModalScreen() {
     return () => clearInterval(interval);
   }, [isRecording]);
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
-    const s = (seconds % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  };
+  // const formatTime = (seconds: number) => {
+  //   const m = Math.floor(seconds / 60)
+  //     .toString()
+  //     .padStart(2, "0");
+  //   const s = (seconds % 60).toString().padStart(2, "0");
+  //   return `${m}:${s}`;
+  // };
 
   const handleStartRecording = async () => {
     try {
