@@ -113,12 +113,14 @@ const RecordsScreen = () => {
           </TouchableOpacity>
         )}
       </View>
-
-      <CategoryDropdown
-        categories={categories}
-        selectedCategoryIds={selectedCategoryIds}
-        onSelect={setSelectedCategoryIds}
-      />
+      <View style={searchStyles.dropdownCustomStyle}>
+        <CategoryDropdown
+          categories={categories}
+          selectedCategoryIds={selectedCategoryIds}
+          onSelect={setSelectedCategoryIds}
+          customStyle={searchStyles.insideDropdown}
+        />
+      </View>
       <View style={styles.listContainer}>
         <RecordList
           records={filteredRecords}
@@ -195,7 +197,7 @@ const searchStyles = StyleSheet.create({
     backgroundColor: "#ffffff",
     marginHorizontal: 16,
     marginTop: 16,
-    marginBottom: 10,
+    // marginBottom: ,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
@@ -210,6 +212,20 @@ const searchStyles = StyleSheet.create({
     fontSize: 16,
     color: "#1f2937",
     paddingVertical: 0,
+  },
+  dropdownCustomStyle: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingBottom: 12,
+  },
+  insideDropdown: {
+    borderWidth: 0,
   },
 });
 

@@ -45,18 +45,17 @@ export const CategoryDropdown = ({
           onSelect(items);
         }}
         renderSelectedItem={(item, unSelect) => (
-          <TouchableOpacity
-            onPress={() => unSelect && unSelect(item)}
-            style={{ marginBottom: 10 }}
-          >
+          <TouchableOpacity onPress={() => unSelect && unSelect(item)}>
             <View
               style={[
                 styles.selectedItem,
-                { backgroundColor: item.assignedColor, borderRadius: 14 },
+                {
+                  backgroundColor: item.assignedColor || "#24324d",
+                },
               ]}
             >
               <Text style={styles.selectedItemText}>{item.label}</Text>
-              <Feather name="check-square" size={14} color="#1f2937" />
+              <Feather name="x" size={14} color="#ffffff" />
             </View>
           </TouchableOpacity>
         )}
@@ -66,7 +65,7 @@ export const CategoryDropdown = ({
 };
 
 const styles = StyleSheet.create({
-  container: { width: "100%" },
+  container: { width: "100%", paddingBottom: 10 },
   dropdown: {
     minHeight: 50,
     backgroundColor: "#ffffff",
@@ -76,6 +75,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e5e7eb",
   },
+
   placeholderStyle: { fontSize: 16, color: "#9ca3af" },
   selectedTextStyle: { fontSize: 14, color: "#371f1f" },
   dropdownContainer: { borderRadius: 12, elevation: 4, overflow: "hidden" },
