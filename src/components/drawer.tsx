@@ -9,7 +9,7 @@ export default function TelegramDrawer(props: any) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
-        <Text style={styles.nameText}>Welcome!</Text>
+        {/* <Text style={styles.nameText}>Welcome!</Text> */}
       </View>
 
       <DrawerContentScrollView
@@ -31,8 +31,8 @@ export default function TelegramDrawer(props: any) {
           { paddingBottom: insets.bottom > 0 ? insets.bottom : 20 },
         ]}
       >
-        <Text style={styles.footerTitle}>Homework Films</Text>
-        <Text style={styles.footerText}>{date} • Ver 1.2.0</Text>
+        <Text style={styles.footerTitle}>Final</Text>
+        <Text style={styles.footerText}>{date} • Ver 1.0.0</Text>
       </View>
     </View>
   );
@@ -48,28 +48,17 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     marginBottom: 8,
   },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    marginBottom: 16,
-  },
-  userInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  nameText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "500",
-  },
   listContainer: {
     paddingTop: 8,
   },
   footer: {
-    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    paddingTop: 5,
+    flexDirection: "column",
+    justifyContent: "center",
     alignItems: "center",
+    gap: 5,
   },
   footerTitle: {
     fontSize: 10,
@@ -77,8 +66,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   footerText: {
-    fontSize: 8,
+    fontSize: 10,
     color: "#888",
-    marginTop: 4,
   },
 });

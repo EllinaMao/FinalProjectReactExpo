@@ -12,49 +12,60 @@ export const ActionButtons = ({
   saveDisabled,
 }: ActionButtonsProps) => {
   return (
-    <View style={styles.actionButtons}>
-      <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-        <Text style={styles.buttonText}>Отмена</Text>
-      </TouchableOpacity>
+    <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.saveButton, saveDisabled && styles.saveButtonDisabled]}
+        style={styles.cancelButton}
+        onPress={onCancel}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.cancelText}>Отмена</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.saveButton, saveDisabled && styles.saveDisabled]}
         onPress={onSave}
         disabled={saveDisabled}
+        activeOpacity={0.7}
       >
-        <Text style={styles.buttonText}>Сохранить</Text>
+        <Text style={styles.saveText}>Сохранить</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  actionButtons: {
+  container: {
     flexDirection: "row",
     justifyContent: "space-between",
+    width: "100%",
   },
   cancelButton: {
-    backgroundColor: "#6b7280",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
     flex: 1,
-    marginRight: 10,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: "#d5d7db",
     alignItems: "center",
+    marginRight: 8,
+  },
+  cancelText: {
+    color: "#4b5563",
+    fontWeight: "600",
+    fontSize: 16,
   },
   saveButton: {
-    backgroundColor: "#10b981",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
     flex: 1,
-    marginLeft: 10,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: "#51d645",
     alignItems: "center",
+    marginLeft: 8,
   },
-  saveButtonDisabled: {
-    backgroundColor: "#9ca3af",
+  saveDisabled: {
+    backgroundColor: "#bfdbfe",
   },
-  buttonText: {
-    color: "white",
-    fontWeight: "bold",
+  saveText: {
+    color: "#ffffff",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });

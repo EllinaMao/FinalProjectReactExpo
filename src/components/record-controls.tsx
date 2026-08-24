@@ -1,49 +1,62 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface RecordControlsProps {
   isRecording: boolean;
-  hasAudio: boolean; 
+  hasAudio: boolean;
   onStart: () => void;
   onStop: () => void;
 }
 
-export const RecordControls = ({ isRecording, hasAudio, onStart, onStop }: RecordControlsProps) => {
+export const RecordControls = ({
+  isRecording,
+  hasAudio,
+  onStart,
+  onStop,
+}: RecordControlsProps) => {
   return (
-    <View style={styles.recordControls}>
-      {isRecording ? (
-        <TouchableOpacity style={styles.stopButton} onPress={onStop}>
-          <Text style={styles.buttonText}>Остановить запись</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity style={styles.recordButton} onPress={onStart}>
-          <Text style={styles.buttonText}>
-            {hasAudio ? "Перезаписать" : "Начать запись"}
-          </Text>
-        </TouchableOpacity>
-      )}
+    <View style={styles.container}>
+      <TouchableOpacity
+        style={[
+          styles.buttonWrapper,
+          isRecording ? styles.recordingActive : styles.recordingInactive,
+        ]}
+        onPress={isRecording ? onStop : onStart}
+        activeOpacity={0.7}
+      >
+        <Feather
+          name={isRecording ? "mic-off" : "mic"}
+          size={32}
+          color={isRecording ? "#ffffff" : "#ef4444"}
+        />
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  recordControls: {
+  container: {
     alignItems: "center",
-    marginBottom: 20,
+    justifyContent: "center",
+    marginBottom: 24,
   },
-  recordButton: {
+  buttonWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  recordingInactive: {
+    backgroundColor: "#ffffff",
+  },
+  recordingActive: {
     backgroundColor: "#ef4444",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-  },
-  stopButton: {
-    backgroundColor: "#3b82f6",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "bold",
+
+    elevation: 8,
+    shadowColor: "#ef4444",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
 });

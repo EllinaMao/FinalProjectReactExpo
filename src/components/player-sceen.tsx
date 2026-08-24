@@ -1,12 +1,25 @@
-import { Record } from "@/lib/db";
-import Entypo from "@expo/vector-icons/Entypo";
+import { Category, Record } from "@/lib/db";
+import Feather from "@expo/vector-icons/Feather";
 import Slider from "@react-native-community/slider";
 import { useAudioPlayer } from "expo-audio";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { formatTime } from "../helpers/formatTime";
+import { EditModal } from "./edit-modal";
 
-export function PlayerUI({ record, router }: { record: Record; router: any }) {
+export function PlayerUI({
+  record,
+  router,
+  categories,
+  onHandleEdit,
+  onHandleDelete,
+}: {
+  record: Record;
+  router: any;
+  categories: Category[];
+  onHandleEdit: (newTitle: string, newCategoryIds: string[]) => void;
+  onHandleDelete: () => void;
+}) {
   const filePath = record.audioFilePath || "";
 
   const audioSource = filePath.startsWith("file://")
@@ -17,8 +30,19 @@ export function PlayerUI({ record, router }: { record: Record; router: any }) {
 
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-
   const [isSeeking, setIsSeeking] = useState(false);
+
+  const [currentTitle, setCurrentTitle] = useState(record.title);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+
+  const handleSaveEdit = async (newTitle: string, newCategoryIds: string[]) => {
+    const trimmedTitle = newTitle.trim();
+    if (trimmedTitle) {
+      await onHandleEdit(trimmedTitle, newCategoryIds);
+      setCurrentTitle(trimmedTitle);
+    }
+    setIsEditModalVisible(false);
+  };
 
   useEffect(() => {
     if (!player) return;
@@ -36,6 +60,9 @@ export function PlayerUI({ record, router }: { record: Record; router: any }) {
 
   const handleTogglePlay = () => {
     if (!player) return;
+    if (player.currentTime >= player.duration) {
+      player.seekTo(0);
+    }
     if (player.playing) {
       player.pause();
       setIsPlaying(false);
@@ -57,13 +84,78 @@ export function PlayerUI({ record, router }: { record: Record; router: any }) {
     setIsSeeking(false);
   };
 
+  const handleForward = (back: boolean) => {
+    if (!player) return;
+    const seekTime = back
+      ? Math.max(player.currentTime - 10, 0)
+      : Math.min(player.currentTime + 10, player.duration);
+    player.seekTo(seekTime);
+    setCurrentTime(seekTime);
+  };
+
   const validDuration =
     player?.duration && player.duration > 0 ? player.duration : 1;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{record.title}</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Feather name="arrow-left" style={styles.closeIcon} />
+        </TouchableOpacity>
 
+        <Text style={styles.title} numberOfLines={1}>
+          {currentTitle}
+        </Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => setIsEditModalVisible(true)}
+        >
+          <Feather
+            name="edit-2"
+            style={[styles.icon, { color: "#b3b2b2", fontSize: 20 }]}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            Alert.alert(
+              "Удаление записи",
+              "Вы уверены, что хотите удалить эту запись?",
+              [
+                {
+                  text: "Отмена",
+                  style: "cancel",
+                },
+                {
+                  text: "Удалить",
+                  style: "destructive",
+                  onPress: onHandleDelete,
+                },
+              ],
+            );
+          }}
+        >
+          <Feather
+            name="trash-2"
+            style={[styles.icon, { color: "#b3b2b2", fontSize: 20 }]}
+          />
+        </TouchableOpacity>
+      </View>
+      {/* Категории */}
+      <View style={styles.categoriesWrapper}>
+        {record.categories?.map((cat) => (
+          <Text
+            key={cat.id}
+            style={[
+              styles.categoryBadge,
+              { backgroundColor: cat.assignedColor },
+            ]}
+          >
+            {cat.name}
+          </Text>
+        ))}
+      </View>
+      {/* тело */}
       <View style={styles.sliderContainer}>
         <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
 
@@ -81,28 +173,58 @@ export function PlayerUI({ record, router }: { record: Record; router: any }) {
 
         <Text style={styles.timeText}>{formatTime(player?.duration ?? 0)}</Text>
       </View>
-
+      {/* кнопки */}
       <View style={styles.controls}>
-        <TouchableOpacity style={styles.playButton} onPress={handleTogglePlay}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => handleForward(true)}
+        >
+          <Feather
+            name="rotate-ccw"
+            style={[styles.icon, styles.fastForwardIcon]}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleTogglePlay}>
           {isPlaying ? (
-            <Entypo name="controller-paus" size={28} color="#ffffff" />
+            <Feather name="pause" style={styles.icon} />
           ) : (
-            <Entypo name="controller-play" size={28} color="#ffffff" />
+            <Feather name="play" style={styles.icon} />
           )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => handleForward(false)}
+        >
+          <Feather
+            name="rotate-cw"
+            style={[styles.icon, styles.fastForwardIcon]}
+          />
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={() => router.back()}
-      >
-        <Text style={styles.closeButtonText}>Закрыть</Text>
-      </TouchableOpacity>
+      <EditModal
+        visible={isEditModalVisible}
+        initialTitle={currentTitle}
+        categoryIds={record.categories?.map((cat) => cat.id) ?? []}
+        categories={categories}
+        onClose={() => setIsEditModalVisible(false)}
+        onSave={handleSaveEdit}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 40,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1f57c067",
+    paddingBottom: 10,
+  },
   container: {
     flex: 1,
     padding: 20,
@@ -110,21 +232,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  centerContainer: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorText: {
-    fontSize: 18,
-    color: "#ef4444",
-    marginBottom: 20,
-  },
   title: {
-    fontSize: 24,
+    flex: 1,
+    marginHorizontal: 10,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 40,
     textAlign: "center",
     color: "#1f2937",
   },
@@ -150,26 +262,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 30,
   },
-  playButton: {
-    backgroundColor: "#3b82f6",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 30,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 80,
-  },
-  closeButton: {
+  button: {
     padding: 10,
   },
-  closeButtonText: {
+  icon: {
+    color: "#1e6ffa",
+    fontSize: 28,
+  },
+  fastForwardIcon: {
+    fontSize: 20,
+  },
+  closeIcon: {
     color: "#9ca3af",
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: "600",
+  },
+  categoriesWrapper: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 20,
+  },
+  categoryBadge: {
+    backgroundColor: "#e5e7eb",
+    color: "#ffffff",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    marginRight: 8,
+    marginBottom: 8,
+    fontSize: 14,
   },
 });

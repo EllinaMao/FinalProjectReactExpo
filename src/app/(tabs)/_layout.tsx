@@ -1,4 +1,4 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Drawer } from "expo-router/drawer";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -45,11 +45,15 @@ const TabLayout = () => {
           }}
         >
           <Drawer.Screen
-            name="index"
+            name="records"
             options={{
-              title: "Index",
+              title: "Список записей",
               drawerIcon: ({ color, size }) => (
-                <MaterialIcons name="home" size={size} color={color} />
+                <MaterialCommunityIcons
+                  name="pulse"
+                  size={size}
+                  color={color}
+                />
               ),
             }}
           />

@@ -1,11 +1,12 @@
 import { PlayerUI } from "@/components/player-sceen";
-import { dbManager, Record } from "@/lib/db";
+import { Category, dbManager, Record } from "@/lib/db";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { setAudioModeAsync } from "expo-audio";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -19,22 +20,34 @@ export default function PlayerScreen() {
   const [record, setRecord] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
+
   useEffect(() => {
-    const fetchRecord = async () => {
+    const fetchData = async () => {
       if (!id) return;
       try {
-        const data = await dbManager.getRecordById(id);
-        setRecord(data);
+        const [recordData, categoriesData] = await Promise.all([
+          dbManager.getRecordById(id),
+          dbManager.getAllCategories(),
+        ]);
+
+        setRecord(recordData);
+        setCategories(categoriesData);
       } catch (error) {
-        console.error("Ошибка при получении записи:", error);
+        console.error("Ошибка при получении данных:", error);
+        Alert.alert(
+          "Ошибка",
+          "Не удалось загрузить данные. Пожалуйста, попробуйте снова.",
+        );
       } finally {
         setIsLoading(false);
+        setIsCategoriesLoading(false);
       }
     };
 
-    fetchRecord();
+    fetchData();
   }, [id]);
-
   useEffect(() => {
     const setupAudio = async () => {
       try {
@@ -43,12 +56,16 @@ export default function PlayerScreen() {
         });
       } catch (e) {
         console.error("Ошибка при настройке аудио-режима:", e);
+        Alert.alert(
+          "Ошибка",
+          "Не удалось настроить аудио-режим. Пожалуйста, попробуйте снова.",
+        );
       }
     };
     setupAudio();
   }, []);
 
-  if (isLoading) {
+  if (isLoading || isCategoriesLoading) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#3b82f6" />
@@ -56,6 +73,38 @@ export default function PlayerScreen() {
     );
   }
 
+  const handleEdit = async (newTitle: string, newCategoryIds: string[]) => {
+    if (record) {
+      try {
+        await dbManager.updateRecord(record.id, newTitle, newCategoryIds);
+        setRecord({
+          ...record,
+          title: newTitle,
+          categories: categories.filter((cat) =>
+            newCategoryIds.includes(cat.id),
+          ),
+        });
+      } catch (error) {
+        console.error("Ошибка при обновлении в БД:", error);
+        Alert.alert("Ошибка", "Не удалось обновить запись.");
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (record) {
+      try {
+        await dbManager.deleteRecord(record.id);
+        router.back();
+      } catch (error) {
+        console.error("Ошибка при удалении записи из БД:", error);
+        Alert.alert(
+          "Ошибка",
+          "Не удалось удалить запись. Пожалуйста, попробуйте снова.",
+        );
+      }
+    }
+  };
   if (!record || !record.audioFilePath) {
     return (
       <View style={styles.centerContainer}>
@@ -70,7 +119,15 @@ export default function PlayerScreen() {
     );
   }
 
-  return <PlayerUI record={record} router={router} />;
+  return (
+    <PlayerUI
+      record={record}
+      categories={categories}
+      router={router}
+      onHandleEdit={handleEdit}
+      onHandleDelete={handleDelete}
+    />
+  );
 }
 
 const styles = StyleSheet.create({

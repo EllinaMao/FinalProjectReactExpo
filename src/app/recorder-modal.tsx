@@ -4,32 +4,52 @@ import {
   setAudioModeAsync,
   useAudioRecorder,
 } from "expo-audio";
+import * as Crypto from "expo-crypto";
 import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
 
 import { ActionButtons } from "@/components/action-buttons";
 import { RecordControls } from "@/components/record-controls";
-import * as Crypto from "expo-crypto";
+import { SaveRecordModal } from "@/components/ui/saveModal";
+import { generateDefaultTitle } from "@/helpers/generate-default-title";
 import { QualityOption, QualitySelector } from "../components/quality-selector";
 import { formatTime } from "../helpers/formatTime";
-import { dbManager } from "../lib/db";
+import { Category, dbManager } from "../lib/db";
 
 export default function RecorderModalScreen() {
   const router = useRouter();
 
   const [title, setTitle] = useState("");
+
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
   const [isRecording, setIsRecording] = useState(false);
   const [selectedQuality, setSelectedQuality] = useState<QualityOption>("high");
   const [recordDuration, setRecordDuration] = useState(0);
   const [audioLength, setAudioLength] = useState<number | null>(null);
+
+  const [isSaveDialogVisible, setIsSaveDialogVisible] = useState(false);
 
   const recorder = useAudioRecorder(
     selectedQuality === "high"
       ? RecordingPresets.HIGH_QUALITY
       : RecordingPresets.LOW_QUALITY,
   );
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await dbManager.getAllCategories();
+        setCategories(cats);
+      } catch (error) {
+        console.error("Ошибка при загрузке категорий:", error);
+      }
+    };
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -48,7 +68,7 @@ export default function RecorderModalScreen() {
     try {
       const permission = await AudioModule.requestRecordingPermissionsAsync();
       if (!permission.granted) {
-        console.error("Нет прав на микрофон!");
+        console.error("Нет разрешения на микрофон!");
       }
 
       await setAudioModeAsync({
@@ -57,7 +77,6 @@ export default function RecorderModalScreen() {
       });
 
       await recorder.prepareToRecordAsync();
-
       recorder.record();
       setIsRecording(true);
     } catch (error) {
@@ -65,38 +84,50 @@ export default function RecorderModalScreen() {
       setIsRecording(false);
     }
   };
+
   const handleStopRecording = () => {
     recorder.stop();
     setIsRecording(false);
   };
 
+  const handleOpenSaveDialog = () => {
+    if (!title.trim()) {
+      setTitle(generateDefaultTitle());
+    }
+    setIsSaveDialogVisible(true);
+  };
+
   const handleSave = async () => {
     try {
-      let TitleNew = Crypto.randomUUID();
-      if (!title) {
-        setTitle(`Audio ${TitleNew}`);
+      let finalTitle = title.trim();
+      if (!finalTitle) {
+        finalTitle = generateDefaultTitle();
       }
 
       const currentUri = recorder.uri;
       if (!currentUri) {
-        console.error("Попытка сохранить, но файл еще не готов!");
         return;
       }
 
-      const fileName = `audio_${TitleNew}.m4a`;
+      const fileName = `audio_${Crypto.randomUUID()}.m4a`;
       const sourceFile = new File(currentUri);
       const destinationFile = new File(Paths.document, fileName);
 
       await sourceFile.move(destinationFile);
-
-      console.log("Сохраняем в БД путь:", destinationFile.uri);
-      await dbManager.addRecord(title, destinationFile.uri, audioLength);
-
+      await dbManager.addRecord(
+        finalTitle,
+        destinationFile.uri,
+        audioLength,
+        categoryIds,
+      );
       setTitle("");
       setAudioLength(null);
+      setCategoryIds([]);
+      setIsSaveDialogVisible(false);
       router.back();
     } catch (error) {
       console.error("Ошибка при сохранении:", error);
+      Alert.alert("Ошибка", "Не удалось сохранить запись");
     }
   };
 
@@ -109,14 +140,9 @@ export default function RecorderModalScreen() {
   return (
     <View style={styles.overlay}>
       <View style={styles.modalContent}>
-        <Text style={styles.headerTitle}>Новая аудиозапись</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Введите название..."
-          value={title}
-          onChangeText={setTitle}
-        />
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Запись аудио</Text>
+        </View>
 
         <QualitySelector
           selectedQuality={selectedQuality}
@@ -124,74 +150,95 @@ export default function RecorderModalScreen() {
           disabled={isRecording}
         />
 
-        {isRecording && (
-          <View style={styles.timerContainer}>
-            <Text style={styles.timerText}>
-              Идет запись: {formatTime(recordDuration)}
-            </Text>
-          </View>
-        )}
+        <View style={styles.centerSection}>
+          <Text
+            style={[styles.timerText, isRecording && styles.timerTextActive]}
+          >
+            {formatTime(recordDuration)}
+          </Text>
 
-        <RecordControls
-          isRecording={isRecording}
-          hasAudio={!!recorder.uri}
-          onStart={handleStartRecording}
-          onStop={handleStopRecording}
-        />
+          {recorder.uri && !isRecording && recordDuration > 0 && (
+            <Text style={styles.statusText}>Запись готова</Text>
+          )}
 
-        {recorder.uri && !isRecording && (
-          <Text style={styles.statusText}>Запись готова к сохранению</Text>
-        )}
+          <RecordControls
+            isRecording={isRecording}
+            hasAudio={!!recorder.uri}
+            onStart={handleStartRecording}
+            onStop={handleStopRecording}
+          />
+        </View>
 
         <ActionButtons
           onCancel={handleClose}
-          onSave={handleSave}
-          saveDisabled={!title || !recorder.uri}
+          onSave={handleOpenSaveDialog}
+          saveDisabled={!recorder.uri || isRecording}
         />
       </View>
+
+      <SaveRecordModal
+        visible={isSaveDialogVisible}
+        title={title}
+        categoryIds={categoryIds}
+        categories={categories}
+        onTitleChange={setTitle}
+        onCategoryChange={setCategoryIds}
+        onCancel={() => setIsSaveDialogVisible(false)}
+        onSave={handleSave}
+      />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
-    width: "85%",
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    elevation: 5,
+    width: "90%",
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 24,
+    minHeight: 420,
+    justifyContent: "space-between",
+    elevation: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 20,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#111827",
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 20,
+  centerSection: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  timerText: {
+    fontSize: 48,
+    fontWeight: "300",
+    fontVariant: ["tabular-nums"],
+    color: "#374151",
+    marginBottom: 8,
+  },
+  timerTextActive: {
+    color: "#ef4444",
+    fontWeight: "500",
   },
   statusText: {
     color: "#10b981",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  timerContainer: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  timerText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#ef4444",
+    fontSize: 14,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
 });
