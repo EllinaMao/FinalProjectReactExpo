@@ -79,12 +79,24 @@ const RecordsScreen = () => {
   };
 
   const handleDeleteSelected = async () => {
-    for (const id of selectedRecords) {
-      await dbManager.deleteRecord(id);
-    }
-    setSelectedRecords(new Set());
-    setIsSelectionMode(false);
-    loadData();
+    Alert.alert("Подтверждение удаления", "Подумайте еще раз! Вы уверенны?", [
+      {
+        text: "Отмена",
+        style: "cancel",
+      },
+      {
+        text: "Удалить",
+        style: "destructive",
+        onPress: async () => {
+          for (const id of selectedRecords) {
+            await dbManager.deleteRecord(id);
+          }
+          setSelectedRecords(new Set());
+          setIsSelectionMode(false);
+          loadData();
+        },
+      },
+    ]);
   };
 
   const openRecorder = () => {

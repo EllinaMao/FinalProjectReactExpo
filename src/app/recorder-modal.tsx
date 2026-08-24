@@ -54,12 +54,12 @@ export default function RecorderModalScreen() {
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (isRecording) {
+      setRecordDuration(0);
+      setAudioLength(null);
+
       interval = setInterval(() => {
         setRecordDuration((prev) => prev + 1);
       }, 1000);
-    } else {
-      setAudioLength(recordDuration);
-      setRecordDuration(0);
     }
     return () => clearInterval(interval);
   }, [isRecording]);
@@ -88,6 +88,7 @@ export default function RecorderModalScreen() {
   const handleStopRecording = () => {
     recorder.stop();
     setIsRecording(false);
+    setAudioLength(recordDuration);
   };
 
   const handleOpenSaveDialog = () => {
