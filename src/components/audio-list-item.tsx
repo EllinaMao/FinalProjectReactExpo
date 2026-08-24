@@ -20,9 +20,6 @@ const AudioListItem = ({
   const player = useAudioPlayer(item.audioFilePath ?? null);
   const router = useRouter();
 
-  const handleLongPress = () => {
-    //change title to input field and allow user to edit it
-  };
   const handlePress = () => {
     if (isSelectionMode) {
       onToggle(item.id);

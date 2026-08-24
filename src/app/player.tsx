@@ -1,8 +1,7 @@
+import { PlayerUI } from "@/components/player-sceen";
 import { dbManager, Record } from "@/lib/db";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import Entypo from "@expo/vector-icons/Entypo";
-import Slider from "@react-native-community/slider";
-import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
+import { setAudioModeAsync } from "expo-audio";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -12,89 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { formatTime } from "../helpers/formatTime";
-
-function PlayerUI({ record, router }: { record: Record; router: any }) {
-  let audioSource = "";
-  if (record.audioFilePath) {
-    audioSource = record.audioFilePath.startsWith("file://")
-      ? record.audioFilePath
-      : `file://${record.audioFilePath}`;
-  } else {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Файл не найден</Text>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => router.back()}
-        >
-          <AntDesign name="rollback" size={24} color="black" />
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const player = useAudioPlayer(audioSource);
-
-  const handleTogglePlay = () => {
-    if (!player) return;
-    if (player.playing) {
-      player.pause();
-    } else {
-      player.play();
-    }
-  };
-
-  const handleSeek = (value: number) => {
-    if (player) {
-      player.seekTo(value);
-    }
-  };
-
-  const validDuration =
-    player?.duration && player.duration > 0 ? player.duration : 1;
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{record.title}</Text>
-
-      <View style={styles.sliderContainer}>
-        <Text style={styles.timeText}>
-          {formatTime(player?.currentTime ?? 0)}
-        </Text>
-
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={validDuration}
-          value={player?.currentTime ?? 0}
-          onSlidingComplete={handleSeek}
-          minimumTrackTintColor="#3b82f6"
-          maximumTrackTintColor="#d1d5db"
-          thumbTintColor="#3b82f6"
-        />
-
-        <Text style={styles.timeText}>{formatTime(player?.duration ?? 0)}</Text>
-      </View>
-
-      <View style={styles.controls}>
-        <TouchableOpacity style={styles.playButton} onPress={handleTogglePlay}>
-          {player?.playing ? (
-            <Entypo name="controller-paus" size={28} color="#ffffff" />
-          ) : (
-            <Entypo name="controller-play" size={28} color="#ffffff" />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={() => router.back()}
-      >
-        <Text style={styles.closeButtonText}>Закрыть</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
 
 export default function PlayerScreen() {
   const router = useRouter();

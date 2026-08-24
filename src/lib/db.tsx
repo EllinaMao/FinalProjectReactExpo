@@ -1,12 +1,20 @@
 import * as Crypto from "expo-crypto";
 import * as SQLite from "expo-sqlite";
 
+const categories = ["Work", "Personal", "Ideas", "Other"];
+
 export interface Record {
   id: string;
   title: string;
   audioFilePath?: string;
   created_at?: number;
-  length?: number;
+  category_id?: string;
+  duration?: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
 }
 
 class DatabaseManager {
@@ -30,11 +38,19 @@ class DatabaseManager {
       this.db = await SQLite.openDatabaseAsync("records.db");
 
       await this.db.execAsync(
+        `CREATE TABLE IF NOT EXISTS categories(
+          id CHAR(32) PRIMARY KEY NOT NULL,
+          name TEXT NOT NULL
+        );`,
+      );
+
+      await this.db.execAsync(
         `CREATE TABLE IF NOT EXISTS records(
           id CHAR(32) PRIMARY KEY NOT NULL,
           title TEXT NOT NULL,
+          category_id CHAR(32) REFERENCES categories(id) ON DELETE SET NULL,
           audioFilePath TEXT,
-          length INTEGER,
+          duration INTEGER,
           created_at INTEGER
         );`,
       );
@@ -47,18 +63,20 @@ class DatabaseManager {
   async addRecord(
     title: string,
     audioFilePath?: string | null,
-    length?: number | null,
+    duration?: number | null,
+    categoryId?: string | null,
   ): Promise<string> {
     if (!this.db) throw new Error("Db is not initialized");
 
     const newId = Crypto.randomUUID();
 
     await this.db.runAsync(
-      "INSERT INTO records(id, title, audioFilePath, length, created_at) VALUES (?, ?, ?, ?, ?);",
+      "INSERT INTO records(id, title, audioFilePath, category_id, duration, created_at) VALUES (?, ?, ?, ?, ?, ?);",
       newId,
       title,
       audioFilePath ?? null,
-      length ?? null,
+      categoryId ?? null,
+      duration ?? null,
       Date.now(),
     );
 
@@ -74,6 +92,13 @@ class DatabaseManager {
     const rows = await this.db.getAllAsync<Record>(query);
     console.log("Records retrieved: ", rows.length);
 
+    return rows;
+  }
+
+  async getAllCategories(): Promise<Category[]> {
+    if (!this.db) throw new Error("Db is not init");
+    const query = `SELECT * FROM categories;`;
+    const rows = await this.db.getAllAsync<Category>(query);
     return rows;
   }
 
@@ -94,6 +119,7 @@ class DatabaseManager {
     );
     console.log("Record updated with ID:", id);
   }
+
   async getRecordById(id: string): Promise<Record | null> {
     if (!this.db) throw new Error("Db is not init");
 
@@ -101,9 +127,9 @@ class DatabaseManager {
       "SELECT * FROM records WHERE id = ?;",
       id,
     );
-
     return row;
   }
+
   async findRecordByName(title: string): Promise<Record | null> {
     if (!this.db) throw new Error("Db is not init");
 
@@ -111,13 +137,21 @@ class DatabaseManager {
     const rows = await this.db.getAllAsync<Record>(query, title);
     return rows.length > 0 ? rows[0] : null;
   }
-  async findRecordByLength(length: number): Promise<Record[]> {
+  async findRecordByDuration(duration: number): Promise<Record[]> {
     if (!this.db) throw new Error("Db is not init");
 
-    const query = `SELECT * FROM records WHERE length = ?;`;
-    const rows = await this.db.getAllAsync<Record>(query, length);
+    const query = `SELECT * FROM records WHERE duration = ?;`;
+    const rows = await this.db.getAllAsync<Record>(query, duration);
     return rows;
   }
+  async findRecordByCategory(categoryId: string): Promise<Record[]> {
+    if (!this.db) throw new Error("Db is not init");
+
+    const query = `SELECT * FROM records WHERE category_id = ?;`;
+    const rows = await this.db.getAllAsync<Record>(query, categoryId);
+    return rows;
+  }
+
   async resetDatabase(dbName: string) {
     await SQLite.deleteDatabaseAsync(dbName);
   }
