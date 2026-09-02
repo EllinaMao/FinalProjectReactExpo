@@ -45,7 +45,7 @@ const TabLayout = () => {
           }}
         >
           <Drawer.Screen
-            name="records"
+            name="index"
             options={{
               title: "Список записей",
               drawerIcon: ({ color, size }) => (
